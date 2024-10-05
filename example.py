@@ -79,7 +79,7 @@ def get_transaction_info(transaction_id: str, client: AppStoreServerAPIClient, v
     :param verifier: SignedDataVerifier instance
     :return: True if the transaction info is valid, False otherwise
     """ 
-    
+
     try:
         response = client.get_transaction_info(transaction_id)    
     except Exception as e:
@@ -141,12 +141,11 @@ def validate_app_store_purchase(transaction_id: str, client: AppStoreServerAPICl
         revision = response.revision       
 
     for transaction in transactions:
-        if transaction.transactionId == transaction_id:
-            print(f"iOS Transaction validated: {transaction}")
-
+        if transaction.transactionId == transaction_id:            
             #Check app bundle in verified_transaction
             if verified_transaction and hasattr(verified_transaction, 'bundleId') and verified_transaction.bundleId == BUNDLE_ID:
                 print("App bundle is valid")
+                print(f"iOS Transaction validated: {transaction}")
                 return True
             else:
                 print("App bundle is invalid")
