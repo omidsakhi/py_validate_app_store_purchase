@@ -1,6 +1,6 @@
 # App Store Server API Purchase Validation Example
 
-This repository demonstrates how to validate App Store purchases using the App Store Server API and the `appstoreserverlibrary` in Python. It provides a practical example of integrating Apple's server-side validation for in-app purchases and subscriptions.
+This repository demonstrates how to validate App Store purchases using the App Store Server API and the `app-store-server-library` in Python. It provides a practical example of integrating Apple's server-side validation for in-app purchases and subscriptions.
 
 ## Features
 
@@ -26,14 +26,14 @@ This repository demonstrates how to validate App Store purchases using the App S
 
 ## Requirements
 
-- `appstoreserverlibrary` package
+- `app-store-server-library` package
 
 ## Getting Started
 
 1. Clone this repository
-2. Install the required packages: `pip install appstoreserverlibrary`
+2. Install the required packages: `pip install app-store-server-library`
 3. Update the configuration variables in the script
-4. Run the script: `python test_validate.py`
+4. Run the script: `python example.py`
 
 This example provides a foundation for implementing App Store purchase validation in your Python projects using the latest App Store Server API.
 

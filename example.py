@@ -70,6 +70,37 @@ def create_app_store_client(private_key: str) -> AppStoreServerAPIClient:
         environment=ENVIRONMENT
     )
 
+def get_transaction_info(transaction_id: str, client: AppStoreServerAPIClient, verifier: SignedDataVerifier) -> bool:
+    """
+    Get transaction info for the provided transaction ID.
+    
+    :param transaction_id: The transaction ID to fetch info for
+    :param client: AppStoreServerAPIClient instance
+    :param verifier: SignedDataVerifier instance
+    :return: True if the transaction info is valid, False otherwise
+    """ 
+    
+    try:
+        response = client.get_transaction_info(transaction_id)    
+    except Exception as e:
+        print(f"Error fetching IOS transaction info: {str(e)}")        
+    
+    verified_transaction = None
+    if response and hasattr(response, 'signedTransactionInfo') and response.signedTransactionInfo:
+        try:
+            verified_transaction = verifier.verify_and_decode_signed_transaction(response.signedTransactionInfo)                
+            print(verified_transaction)
+        except Exception as e:
+            print(f"Error verifying iOS transaction: {str(e)}")
+    else:
+        print("No transaction info found")
+    
+    #Check app bundle in verified_transaction
+    if verified_transaction and hasattr(verified_transaction, 'bundleId') and verified_transaction.bundleId == BUNDLE_ID:
+        print("App bundle is valid")
+    else:
+        print("App bundle is invalid")
+
 def validate_app_store_purchase(transaction_id: str, client: AppStoreServerAPIClient, verifier: SignedDataVerifier) -> bool:
     """
     Validate an App Store purchase using the provided transaction ID.
@@ -95,7 +126,7 @@ def validate_app_store_purchase(transaction_id: str, client: AppStoreServerAPICl
             print(f"Error fetching IOS transaction history: {str(e)}")
             return False
 
-        if response and response.signedTransactions:
+        if response and hasattr(response, 'signedTransactions') and response.signedTransactions:
             for signed_transaction in response.signedTransactions:
                 try:
                     verified_transaction = verifier.verify_and_decode_signed_transaction(signed_transaction)
@@ -112,7 +143,14 @@ def validate_app_store_purchase(transaction_id: str, client: AppStoreServerAPICl
     for transaction in transactions:
         if transaction.transactionId == transaction_id:
             print(f"iOS Transaction validated: {transaction}")
-            return True
+
+            #Check app bundle in verified_transaction
+            if verified_transaction and hasattr(verified_transaction, 'bundleId') and verified_transaction.bundleId == BUNDLE_ID:
+                print("App bundle is valid")
+                return True
+            else:
+                print("App bundle is invalid")
+                return False
 
     return False
 
