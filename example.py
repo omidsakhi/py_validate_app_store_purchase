@@ -165,10 +165,16 @@ def main():
 
     # Example usage
     transaction_id = "YOUR_TRANSACTION_ID"  # Replace with actual transaction ID
+
+    # Check database for transaction id
+    # if transaction id is not in database, validate the transaction
+    # if transaction id is in database, skip validation
+
     is_valid = validate_app_store_purchase(transaction_id, client, verifier)
     
     if is_valid:
         print("Transaction is valid. Proceed with granting access to content/features.")
+        # Record transaction id in your database
     else:
         print("Transaction is invalid. Deny access to content/features.")
 
