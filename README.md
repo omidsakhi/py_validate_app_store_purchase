@@ -1,42 +1,74 @@
-# App Store Server API Purchase Validation Example
+# App Store Server API — Purchase Validation Example (Python)
 
-This repository demonstrates how to validate App Store purchases using the App Store Server API and the `app-store-server-library` in Python. It provides a practical example of integrating Apple's server-side validation for in-app purchases and subscriptions.
+A minimal, self-contained Python example that shows how to **server-side validate iOS in-app purchases** using Apple's [App Store Server API](https://developer.apple.com/documentation/appstoreserverapi) and Apple's official [`app-store-server-library`](https://github.com/apple/app-store-server-library-python).
 
-## Features
+It is intentionally small so the flow (load certs → build verifier → call API → verify signed JWS → check bundle) is easy to follow.
 
-- Load and use Apple Root Certificates for secure communication
-- Create a `SignedDataVerifier` for transaction verification
-- Set up an `AppStoreServerAPIClient` for interacting with the App Store Server API
-- Validate App Store purchases using transaction IDs
-- Handle pagination for transaction history requests
-- Error handling and logging for API interactions and verification processes
+## What it demonstrates
 
-## Key Components
-
-- `load_certificates()`: Loads Apple Root Certificates from specified file paths
-- `create_signed_data_verifier()`: Sets up a `SignedDataVerifier` instance
-- `create_app_store_client()`: Initializes an `AppStoreServerAPIClient`
-- `validate_app_store_purchase()`: Core function to validate a purchase using a transaction ID
-
-## Usage
-
-1. Replace placeholder values in the configuration section with your actual App Store Connect credentials
-2. Ensure you have the necessary certificates and private key file
-3. Run the script to validate an App Store purchase
+- Loading the Apple Root Certificates required to verify Apple-signed JWS payloads.
+- Building a `SignedDataVerifier` with the correct environment (sandbox vs production) and bundle ID.
+- Building an `AppStoreServerAPIClient` using a `.p8` signing key from App Store Connect.
+- Fetching a single transaction via `get_transaction_info`.
+- Walking paginated transaction history via `get_transaction_history` and verifying each signed transaction.
+- Matching the target `transactionId` and confirming the decoded `bundleId` matches your app.
 
 ## Requirements
 
-- `app-store-server-library` package
+- Python 3.9+
+- [`app-store-server-library`](https://pypi.org/project/app-store-server-library/) (Apple's official Python library)
+- An [App Store Connect API key](https://developer.apple.com/documentation/appstoreserverapi/creating_api_keys_to_use_with_the_app_store_server_api) with "In-App Purchase" access (`.p8`, `KEY_ID`, `ISSUER_ID`)
+- Your app's `BUNDLE_ID` and numeric `APP_APPLE_ID`
+- The four Apple Root Certificates used to verify JWS signatures
 
-## Getting Started
+## Getting the Apple Root Certificates
 
-1. Clone this repository
-2. Install the required packages: `pip install app-store-server-library`
-3. Update the configuration variables in the script
-4. Run the script: `python example.py`
+Download the four root CA certificates from Apple's [Certificate Authority page](https://www.apple.com/certificateauthority/) and save them under `./certs/`:
 
-This example provides a foundation for implementing App Store purchase validation in your Python projects using the latest App Store Server API.
+- `AppleComputerRootCertificate.cer`
+- `AppleIncRootCertificate.cer`
+- `AppleRootCA-G2.cer`
+- `AppleRootCA-G3.cer`
 
-## Contributions Welcome
+## Setup
 
-If you have any improvements or suggestions for this example, please feel free to open an issue or submit a pull request. We welcome contributions that can enhance the functionality, improve error handling, or provide additional features related to App Store purchase validation.
+```bash
+git clone https://github.com/omidsakhi/app-store-purchase-validator-python.git
+cd app-store-purchase-validator-python
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+Then open `example.py` and fill in the configuration block:
+
+```python
+KEY_ID            = "YOUR_KEY_ID"
+ISSUER_ID         = "YOUR_ISSUER_ID"
+BUNDLE_ID         = "com.example.yourapp"
+APP_APPLE_ID      = 0000000000
+ENVIRONMENT       = Environment.SANDBOX  # or Environment.PRODUCTION
+PRIVATE_KEY_PATH  = "path/to/AuthKey_XXXXXXXX.p8"
+```
+
+Run it:
+
+```bash
+python example.py
+```
+
+## Notes and caveats
+
+- **Scope:** `validate_app_store_purchase` currently filters history by `ProductType.CONSUMABLE`. If you sell subscriptions or non-consumables, adjust `productTypes` accordingly.
+- **Environment matters:** Sandbox transactions will only validate against `Environment.SANDBOX`, and production against `Environment.PRODUCTION`. App Review runs in sandbox — if you handle both in one backend, use Apple's recommended fallback (try production first, then retry in sandbox on `APP_TRANSACTION_ID_NOT_SUPPORTED`-style errors).
+- **Security:** Never commit your `.p8` signing key or any certificates containing private material. The included `.gitignore` excludes `*.p8`, `certs/`, and common secret files.
+- **Replay protection:** In real use, record validated `transactionId`s in your own database before granting entitlement, and short-circuit re-validation on replay.
+
+## License
+
+Licensed under the Apache License 2.0 — see [LICENSE](LICENSE).
+
+## Contributions
+
+Issues and PRs are welcome. If Apple changes an API surface or a better pattern emerges in `app-store-server-library`, feel free to open a PR.

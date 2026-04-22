@@ -78,28 +78,33 @@ def get_transaction_info(transaction_id: str, client: AppStoreServerAPIClient, v
     :param client: AppStoreServerAPIClient instance
     :param verifier: SignedDataVerifier instance
     :return: True if the transaction info is valid, False otherwise
-    """ 
+    """
 
+    response = None
     try:
-        response = client.get_transaction_info(transaction_id)    
+        response = client.get_transaction_info(transaction_id)
     except Exception as e:
-        print(f"Error fetching IOS transaction info: {str(e)}")        
-    
+        print(f"Error fetching iOS transaction info: {str(e)}")
+        return False
+
     verified_transaction = None
-    if response and hasattr(response, 'signedTransactionInfo') and response.signedTransactionInfo:
+    if response and getattr(response, 'signedTransactionInfo', None):
         try:
-            verified_transaction = verifier.verify_and_decode_signed_transaction(response.signedTransactionInfo)                
+            verified_transaction = verifier.verify_and_decode_signed_transaction(response.signedTransactionInfo)
             print(verified_transaction)
         except Exception as e:
             print(f"Error verifying iOS transaction: {str(e)}")
+            return False
     else:
         print("No transaction info found")
-    
-    #Check app bundle in verified_transaction
-    if verified_transaction and hasattr(verified_transaction, 'bundleId') and verified_transaction.bundleId == BUNDLE_ID:
+        return False
+
+    if verified_transaction and getattr(verified_transaction, 'bundleId', None) == BUNDLE_ID:
         print("App bundle is valid")
-    else:
-        print("App bundle is invalid")
+        return True
+
+    print("App bundle is invalid")
+    return False
 
 def validate_app_store_purchase(transaction_id: str, client: AppStoreServerAPIClient, verifier: SignedDataVerifier) -> bool:
     """
@@ -141,15 +146,13 @@ def validate_app_store_purchase(transaction_id: str, client: AppStoreServerAPICl
         revision = response.revision       
 
     for transaction in transactions:
-        if transaction.transactionId == transaction_id:            
-            #Check app bundle in verified_transaction
-            if verified_transaction and hasattr(verified_transaction, 'bundleId') and verified_transaction.bundleId == BUNDLE_ID:
+        if transaction.transactionId == transaction_id:
+            if getattr(transaction, 'bundleId', None) == BUNDLE_ID:
                 print("App bundle is valid")
                 print(f"iOS Transaction validated: {transaction}")
                 return True
-            else:
-                print("App bundle is invalid")
-                return False
+            print("App bundle is invalid")
+            return False
 
     return False
 
